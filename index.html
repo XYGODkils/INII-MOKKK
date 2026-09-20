@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Làngzy Uploader</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #050505;
+    --card-bg: #121212;
+    --card-border: #2a2a2a;
+    --accent: #c084fc;
+    --accent-hover: #a855f7;
+    --text-main: #ffffff;
+    --text-muted: #a3a3a3;
+    --error: #ef4444;
+    --success: #22c55e;
+    --radius: 16px;
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+  *, *::before, *::after { box-sizing: inherit; }
+
+  body {
+    margin: 0;
+    font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+    background-color: var(--bg);
+    color: var(--text-main);
+    min-height: 100%;
+    display: flex;
+    justify-content: center;
+    padding: 44px 20px 64px;
+    position: relative;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse at 20% 50%, rgba(192, 132, 252, 0.22) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 20%, rgba(168, 85, 247, 0.14) 0%, transparent 50%),
+      radial-gradient(ellipse at 50% 80%, rgba(192, 132, 252, 0.10) 0%, transparent 50%);
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  .orb {
+    position: fixed;
+    border-radius: 50%;
+    filter: blur(120px);
+    pointer-events: none;
+    z-index: 0;
+    animation: orbFloat 20s ease-in-out infinite alternate;
+  }
+
+  .orb-1 {
+    width: 500px;
+    height: 500px;
+    background: rgba(192, 132, 252, 0.15);
+    top: -150px;
+    right: -150px;
+    animation-delay: 0s;
+    box-shadow: 0 0 80px rgba(192, 132, 252, 0.2);
+  }
+
+  .orb-2 {
+    width: 400px;
+    height: 400px;
+    background: rgba(168, 85, 247, 0.12);
+    bottom: -100px;
+    left: -100px;
+    animation-delay: -7s;
+    box-shadow: 0 0 60px rgba(168, 85, 247, 0.15);
+  }
+
+  .orb-3 {
+    width: 300px;
+    height: 300px;
+    background: rgba(192, 132, 252, 0.08);
+    top: 50%;
+    left: 50%;
+    margin-top: -150px;
+    margin-left: -150px;
+    animation-delay: -14s;
+    box-shadow: 0 0 100px rgba(192, 132, 252, 0.1);
+  }
+
+  @keyframes orbFloat {
+    0% { transform: translate(0, 0) scale(1); }
+    33% { transform: translate(40px, -30px) scale(1.15); }
+    66% { transform: translate(-30px, 40px) scale(0.85); }
+    100% { transform: translate(15px, -15px) scale(1.08); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .orb { animation: none; }
+  }
+
+  .container {
+    width: 100%;
+    max-width: 500px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .header { text-align: center; }
+
+  .header h1 {
+    font-weight: 700;
+    font-size: 1.9rem;
+    letter-spacing: -0.5px;
+    margin: 0 0 6px;
+  }
+
+  .header p {
+    color: var(--text-muted);
+    font-size: 0.92rem;
+    font-weight: 300;
+    margin: 0;
+  }
+
+  .card {
+    background: linear-gradient(160deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02)), rgba(20, 16, 28, 0.4);
+    backdrop-filter: blur(24px) saturate(160%);
+    -webkit-backdrop-filter: blur(24px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: var(--radius);
+    padding: 24px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+    overflow: hidden;
+    position: relative;
+  }
+
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 46%;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.10), transparent);
+    pointer-events: none;
+  }
+
+  .card::after {
+    content: '';
+    position: absolute;
+    top: -60%;
+    left: -15%;
+    width: 55%;
+    height: 220%;
+    background: linear-gradient(115deg, rgba(255, 255, 255, 0.07), transparent 55%);
+    transform: rotate(18deg);
+    pointer-events: none;
+  }
+
+  .card > * { position: relative; z-index: 1; }
+
+  .upload-area {
+    border: 1.5px dashed rgba(255, 255, 255, 0.18);
+    border-radius: 12px;
+    padding: 32px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+  }
+
+  .upload-area:hover,
+  .upload-area.dragover {
+    border-color: var(--accent);
+    background: rgba(192, 132, 252, 0.1);
+    box-shadow: 0 0 30px rgba(192, 132, 252, 0.15);
+  }
+
+  .upload-icon {
+    width: 46px;
+    height: 46px;
+    fill: var(--text-muted);
+    margin-bottom: 12px;
+    transition: fill 0.2s;
+  }
+
+  .upload-area:hover .upload-icon { fill: var(--accent); }
+
+  .upload-text { font-weight: 500; margin-bottom: 4px; }
+  .upload-subtext { color: var(--text-muted); font-size: 0.82rem; }
+
+  input[type="file"] { display: none; }
+
+  .file-preview {
+    display: none;
+    margin-top: 18px;
+    background: rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-radius: 12px;
+    padding: 12px;
+    align-items: center;
+    gap: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .file-preview.show { display: flex; }
+
+  .preview-thumb {
+    width: 46px;
+    height: 46px;
+    border-radius: 8px;
+    object-fit: cover;
+    background: #1a1a1a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    overflow: hidden;
+  }
+
+  .preview-thumb img { width: 100%; height: 100%; object-fit: cover; }
+  .preview-thumb svg { width: 18px; height: 18px; fill: var(--text-muted); }
+
+  .file-info { flex: 1; min-width: 0; }
+
+  .file-name {
+    font-size: 0.9rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .file-size { font-size: 0.75rem; color: var(--text-muted); margin-top: 2px; }
+
+  .btn-remove {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 4px;
+    font-size: 18px;
+    line-height: 1;
+  }
+
+  .btn-remove:hover { color: var(--error); }
+
+  .error-box {
+    display: none;
+    margin-top: 16px;
+    padding: 12px;
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    color: var(--error);
+    border-radius: 8px;
+    font-size: 0.85rem;
+    text-align: center;
+  }
+
+  .error-box.show { display: block; }
+
+  .btn-upload {
+    width: 100%;
+    margin-top: 20px;
+    padding: 14px;
+    border-radius: 12px;
+    border: none;
+    background: linear-gradient(135deg, var(--accent-hover), var(--accent));
+    color: #14001f;
+    font-family: inherit;
+    font-weight: 600;
+    font-size: 1rem;
+    cursor: pointer;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    box-shadow: 0 8px 24px rgba(168, 85, 247, 0.25);
+    transition: transform 0.15s ease, background 0.15s ease;
+  }
+
+  .btn-upload.show { display: flex; }
+  .btn-upload:not(:disabled):hover { transform: translateY(-1px); }
+  .btn-upload:disabled { opacity: 0.6; cursor: default; transform: none; }
+
+  .progress-wrapper { margin-top: 20px; display: none; }
+  .progress-wrapper.show { display: block; }
+
+  .progress-info {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+  }
+
+  .progress-bg { height: 6px; background: #222; border-radius: 4px; overflow: hidden; }
+
+  .progress-fill {
+    height: 100%;
+    background: var(--accent);
+    width: 0%;
+    transition: width 0.15s ease;
+    box-shadow: 0 0 10px rgba(192, 132, 252, 0.5);
+  }
+
+  .result-section {
+    display: none;
+    margin-top: 22px;
+    border-top: 1px solid var(--card-border);
+    padding-top: 22px;
+  }
+
+  .result-section.show { display: block; }
+
+  .success-title {
+    color: var(--success);
+    font-weight: 500;
+    font-size: 0.95rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+
+  .success-title svg { width: 20px; height: 20px; fill: var(--success); flex-shrink: 0; }
+
+  .url-group { display: flex; gap: 8px; margin-bottom: 16px; }
+
+  .url-input {
+    flex: 1;
+    min-width: 0;
+    background: #000;
+    border: 1px solid var(--card-border);
+    color: var(--accent);
+    padding: 10px 12px;
+    border-radius: 8px;
+    font-size: 0.88rem;
+    outline: none;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .btn-copy {
+    background: #222;
+    border: 1px solid var(--card-border);
+    color: #fff;
+    padding: 0 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 0.85rem;
+    white-space: nowrap;
+  }
+
+  .btn-copy:hover { background: #333; border-color: var(--accent); }
+
+  .meta-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .meta-box {
+    background: rgba(255, 255, 255, 0.04);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 10px;
+    border-radius: 8px;
+  }
+  .meta-label { font-size: 0.72rem; color: var(--text-muted); margin-bottom: 4px; }
+  .meta-val {
+    font-size: 0.85rem;
+    color: #fff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .embed-preview {
+    width: 100%;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #000;
+    display: none;
+    justify-content: center;
+    border: 1px solid var(--card-border);
+  }
+
+  .embed-preview.show { display: flex; }
+  .embed-preview img,
+  .embed-preview video { max-width: 100%; max-height: 300px; display: block; }
+
+  .again-btn {
+    margin-top: 16px;
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-family: inherit;
+    font-size: 0.82rem;
+    cursor: pointer;
+    padding: 0;
+  }
+
+  .again-btn:hover { color: var(--accent); }
+
+  .history-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--card-border);
+  }
+
+  .history-title { font-size: 1rem; font-weight: 600; }
+
+  .btn-clear {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-family: inherit;
+    font-size: 0.8rem;
+    cursor: pointer;
+  }
+
+  .btn-clear:hover { color: var(--error); }
+
+  .history-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    max-height: 250px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .history-empty {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    text-align: center;
+    padding: 18px 0;
+  }
+
+  .history-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: rgba(255, 255, 255, 0.04);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    transition: background 0.15s ease, border-color 0.15s ease;
+  }
+
+  .history-item:hover { background: rgba(255, 255, 255, 0.07); border-color: rgba(255, 255, 255, 0.16); }
+
+  .h-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    background: #222;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    overflow: hidden;
+  }
+
+  .h-icon img { width: 100%; height: 100%; object-fit: cover; }
+  .h-icon svg { width: 14px; height: 14px; fill: var(--text-muted); }
+
+  .h-info { flex: 1; min-width: 0; }
+
+  .h-name {
+    font-size: 0.85rem;
+    color: #fff;
+    margin-bottom: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .h-meta { font-size: 0.7rem; color: var(--text-muted); }
+
+  .h-actions { display: flex; gap: 6px; flex-shrink: 0; }
+
+  .h-btn {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 5px 9px;
+    border-radius: 6px;
+    font-family: inherit;
+    font-size: 0.75rem;
+  }
+
+  .h-btn:hover { background: #333; color: #fff; }
+  .h-btn.del:hover { color: var(--error); }
+
+  footer {
+    text-align: center;
+    font-size: 0.75rem;
+    color: #555;
+    letter-spacing: 0.01em;
+  }
+
+  @media (max-width: 420px) {
+    .header h1 { font-size: 1.6rem; }
+    .card { padding: 18px; }
+    .upload-area { padding: 26px 14px; }
+    .meta-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+<div class="orb orb-3"></div>
+
+<div class="container">
+
+  <header class="header">
+    <h1>Làngzy Uploader</h1>
+    <p>Modern File Upload Service</p>
+  </header>
+
+  <div class="card">
+    <div class="upload-area" id="dropZone">
+      <input type="file" id="fileInput" accept="image/*,video/*">
+      <svg class="upload-icon" viewBox="0 0 24 24">
+        <path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"></path>
+      </svg>
+      <div class="upload-text">Seret file ke sini</div>
+      <div class="upload-subtext">atau ketuk untuk memilih</div>
+    </div>
+
+    <div class="file-preview" id="filePreview">
+      <div class="preview-thumb" id="previewThumb"></div>
+      <div class="file-info">
+        <div class="file-name" id="fileName">-</div>
+        <div class="file-size" id="fileSize">-</div>
+      </div>
+      <button class="btn-remove" id="btnRemove" title="Batal" aria-label="Batal">&times;</button>
+    </div>
+
+    <div class="error-box" id="errorBox"></div>
+
+    <button class="btn-upload" id="btnUpload">
+      <span>Buat link</span>
+    </button>
+
+    <div class="progress-wrapper" id="progressWrapper">
+      <div class="progress-info">
+        <span>Mengunggah</span>
+        <span id="progressPercent">0%</span>
+      </div>
+      <div class="progress-bg"><div class="progress-fill" id="progressFill"></div></div>
+    </div>
+
+    <div class="result-section" id="resultSection">
+      <div class="success-title">
+        <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+        Upload berhasil
+      </div>
+
+      <div class="url-group">
+        <input type="text" class="url-input" id="resultUrl" readonly>
+        <button class="btn-copy" id="btnResultCopy">Salin</button>
+      </div>
+
+      <div class="meta-grid">
+        <div class="meta-box">
+          <div class="meta-label">Tipe file</div>
+          <div class="meta-val" id="resMime">-</div>
+        </div>
+        <div class="meta-box">
+          <div class="meta-label">Ukuran</div>
+          <div class="meta-val" id="resSize">-</div>
+        </div>
+      </div>
+
+      <div class="embed-preview" id="embedContainer"></div>
+
+      <button class="again-btn" id="btnAgain">Unggah file lain</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="history-header">
+      <div class="history-title">Upload History</div>
+      <button class="btn-clear" id="btnClearHistory">Clear All</button>
+    </div>
+    <ul class="history-list" id="historyList"></ul>
+  </div>
+
+  <footer>By làngzy</footer>
+
+</div>
+
+<script>
+  const dropZone = document.getElementById('dropZone');
+  const fileInput = document.getElementById('fileInput');
+  const filePreview = document.getElementById('filePreview');
+  const previewThumb = document.getElementById('previewThumb');
+  const fileNameEl = document.getElementById('fileName');
+  const fileSizeEl = document.getElementById('fileSize');
+  const btnRemove = document.getElementById('btnRemove');
+  const errorBox = document.getElementById('errorBox');
+  const btnUpload = document.getElementById('btnUpload');
+  const progressWrapper = document.getElementById('progressWrapper');
+  const progressFill = document.getElementById('progressFill');
+  const progressPercent = document.getElementById('progressPercent');
+  const resultSection = document.getElementById('resultSection');
+  const resultUrl = document.getElementById('resultUrl');
+  const resMime = document.getElementById('resMime');
+  const resSize = document.getElementById('resSize');
+  const btnResultCopy = document.getElementById('btnResultCopy');
+  const embedContainer = document.getElementById('embedContainer');
+  const btnAgain = document.getElementById('btnAgain');
+  const historyList = document.getElementById('historyList');
+  const btnClearHistory = document.getElementById('btnClearHistory');
+
+  const HISTORY_KEY = 'langzy_uploader_history';
+  const fileIconSvg = '<svg viewBox="0 0 24 24"><path d="M10 8l6 4-6 4V8z"/><rect x="3" y="3" width="18" height="18" rx="3" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>';
+
+  let currentFile = null;
+
+  function formatBytes(bytes) {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+  }
+
+  function showError(msg) {
+    if (!msg) {
+      errorBox.classList.remove('show');
+      errorBox.textContent = '';
+      return;
+    }
+    errorBox.textContent = msg;
+    errorBox.classList.add('show');
+  }
+
+  function resetSelection() {
+    currentFile = null;
+    fileInput.value = '';
+    dropZone.style.display = 'block';
+    filePreview.classList.remove('show');
+    btnUpload.classList.remove('show');
+    btnUpload.disabled = false;
+    btnUpload.querySelector('span').textContent = 'Buat link';
+    progressWrapper.classList.remove('show');
+    progressFill.style.width = '0%';
+    progressPercent.textContent = '0%';
+    resultSection.classList.remove('show');
+    embedContainer.classList.remove('show');
+    embedContainer.innerHTML = '';
+    showError(null);
+  }
+
+  function handleFiles(files) {
+    if (!files || !files.length) return;
+    const file = files[0];
+
+    const MAX_SIZE = 6 * 1024 * 1024;
+    if (file.size > MAX_SIZE) {
+      showError('Ukuran file maksimal 6 MB.');
+      return;
+    }
+
+    currentFile = file;
+    showError(null);
+
+    dropZone.style.display = 'none';
+    filePreview.classList.add('show');
+    fileNameEl.textContent = file.name;
+    fileSizeEl.textContent = formatBytes(file.size);
+
+    if (file.type.startsWith('image/')) {
+      const url = URL.createObjectURL(file);
+      previewThumb.innerHTML = '<img src="' + url + '" alt="">';
+    } else {
+      previewThumb.innerHTML = fileIconSvg;
+    }
+
+    btnUpload.classList.add('show');
+    resultSection.classList.remove('show');
+  }
+
+  dropZone.addEventListener('click', () => fileInput.click());
+  fileInput.addEventListener('change', (e) => handleFiles(e.target.files));
+
+  ['dragenter', 'dragover'].forEach(evt => {
+    dropZone.addEventListener(evt, (e) => {
+      e.preventDefault();
+      dropZone.classList.add('dragover');
+    });
+  });
+
+  ['dragleave', 'drop'].forEach(evt => {
+    dropZone.addEventListener(evt, (e) => {
+      e.preventDefault();
+      dropZone.classList.remove('dragover');
+    });
+  });
+
+  dropZone.addEventListener('drop', (e) => handleFiles(e.dataTransfer.files));
+  btnRemove.addEventListener('click', resetSelection);
+  btnAgain.addEventListener('click', resetSelection);
+
+  function fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = reader.result;
+        resolve(result.substring(result.indexOf(',') + 1));
+      };
+      reader.onerror = () => reject(new Error('Gagal membaca file.'));
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function uploadToCatbox(file, onProgress) {
+    return new Promise((resolve, reject) => {
+      fileToBase64(file).then((dataBase64) => {
+        const payload = JSON.stringify({
+          filename: file.name,
+          contentType: file.type,
+          dataBase64: dataBase64
+        });
+
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', '/.netlify/functions/upload');
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        xhr.upload.onprogress = (e) => {
+          if (e.lengthComputable) onProgress(Math.round((e.loaded / e.total) * 100));
+        };
+        xhr.onload = () => {
+          let data;
+          try {
+            data = JSON.parse(xhr.responseText);
+          } catch (e) {
+            reject(new Error('Respons server tidak valid.'));
+            return;
+          }
+          if (xhr.status === 200 && data.url) {
+            resolve(data.url);
+          } else {
+            reject(new Error(data.error || 'Upload gagal, coba lagi.'));
+          }
+        };
+        xhr.onerror = () => reject(new Error('Koneksi gagal. Periksa jaringan lalu coba lagi.'));
+        xhr.send(payload);
+      }).catch(reject);
+    });
+  }
+
+  function loadHistory() {
+    try {
+      const raw = localStorage.getItem(HISTORY_KEY);
+      return raw ? JSON.parse(raw) : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function saveHistory(list) {
+    try {
+      localStorage.setItem(HISTORY_KEY, JSON.stringify(list.slice(0, 30)));
+    } catch (e) {}
+  }
+
+  function renderHistory() {
+    const list = loadHistory();
+    if (list.length === 0) {
+      historyList.innerHTML = '<li class="history-empty">No upload history</li>';
+      return;
+    }
+    historyList.innerHTML = list.map((item) => {
+      const icon = item.isImage ? '<img src="' + item.url + '" alt="">' : fileIconSvg;
+      return '<li class="history-item">' +
+        '<div class="h-icon">' + icon + '</div>' +
+        '<div class="h-info">' +
+          '<div class="h-name">' + item.name + '</div>' +
+          '<div class="h-meta">' + item.size + '</div>' +
+        '</div>' +
+        '<div class="h-actions">' +
+          '<button class="h-btn copy" data-url="' + item.url + '">Salin</button>' +
+          '<button class="h-btn del" data-url="' + item.url + '">Hapus</button>' +
+        '</div>' +
+      '</li>';
+    }).join('');
+  }
+
+  historyList.addEventListener('click', (e) => {
+    const copyBtn = e.target.closest('.h-btn.copy');
+    const delBtn = e.target.closest('.h-btn.del');
+    if (copyBtn) {
+      navigator.clipboard.writeText(copyBtn.dataset.url).then(() => {
+        const old = copyBtn.textContent;
+        copyBtn.textContent = 'Tersalin';
+        setTimeout(() => { copyBtn.textContent = old; }, 1200);
+      });
+    }
+    if (delBtn) {
+      const list = loadHistory().filter(item => item.url !== delBtn.dataset.url);
+      saveHistory(list);
+      renderHistory();
+    }
+  });
+
+  btnClearHistory.addEventListener('click', () => {
+    saveHistory([]);
+    renderHistory();
+  });
+
+  btnUpload.addEventListener('click', async () => {
+    if (!currentFile) return;
+    showError(null);
+    btnUpload.disabled = true;
+    btnUpload.querySelector('span').textContent = 'Mengunggah...';
+    progressWrapper.classList.add('show');
+
+    try {
+      const url = await uploadToCatbox(currentFile, (pct) => {
+        progressFill.style.width = pct + '%';
+        progressPercent.textContent = pct + '%';
+      });
+
+      resultUrl.value = url;
+      resMime.textContent = currentFile.type || 'tidak diketahui';
+      resSize.textContent = formatBytes(currentFile.size);
+
+      embedContainer.innerHTML = '';
+      if (currentFile.type.startsWith('image/')) {
+        embedContainer.innerHTML = '<img src="' + url + '" alt="">';
+        embedContainer.classList.add('show');
+      } else if (currentFile.type.startsWith('video/')) {
+        embedContainer.innerHTML = '<video src="' + url + '" controls></video>';
+        embedContainer.classList.add('show');
+      } else {
+        embedContainer.classList.remove('show');
+      }
+
+      resultSection.classList.add('show');
+      btnUpload.classList.remove('show');
+      progressWrapper.classList.remove('show');
+
+      const list = loadHistory();
+      list.unshift({
+        name: currentFile.name,
+        size: formatBytes(currentFile.size),
+        url: url,
+        isImage: currentFile.type.startsWith('image/')
+      });
+      saveHistory(list);
+      renderHistory();
+    } catch (err) {
+      showError(err.message || 'Upload gagal, coba lagi.');
+      btnUpload.disabled = false;
+      btnUpload.querySelector('span').textContent = 'Coba lagi';
+      progressWrapper.classList.remove('show');
+    }
+  });
+
+  btnResultCopy.addEventListener('click', () => {
+    navigator.clipboard.writeText(resultUrl.value).then(() => {
+      const old = btnResultCopy.textContent;
+      btnResultCopy.textContent = 'Tersalin';
+      setTimeout(() => { btnResultCopy.textContent = old; }, 1200);
+    });
+  });
+
+  renderHistory();
+</script>
+</body>
+</html>
